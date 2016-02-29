@@ -1,5 +1,7 @@
 package salsa20
 
+import "strconv"
+
 type word uint32
 
 func lrot(u, c word) word {
@@ -121,3 +123,109 @@ func hash(b [64]byte) [64]byte {
 
 	return r
 }
+
+var (
+	sigma = [4][4]byte{
+		[4]byte{101, 120, 112, 97},
+		[4]byte{110, 100, 32, 51},
+		[4]byte{50, 45, 98, 121},
+		[4]byte{116, 101, 32, 107},
+	}
+
+	tau = [4][4]byte{
+		[4]byte{101, 120, 112, 97},
+		[4]byte{110, 100, 32, 49},
+		[4]byte{54, 45, 98, 121},
+		[4]byte{116, 101, 32, 107},
+	}
+)
+
+// Salsa20(σ0, k0, σ1, n, σ2, k1, σ3)
+func expansion32(k [32]byte, n [16]byte) [64]byte {
+	var s [64]byte
+
+	copy(s[0:4], sigma[0][:])
+	copy(s[4:20], k[0:16])
+	copy(s[20:24], sigma[1][:])
+	copy(s[24:40], n[:])
+	copy(s[40:44], sigma[2][:])
+	copy(s[44:60], k[16:32])
+	copy(s[60:64], sigma[3][:])
+
+	return s
+}
+
+// Salsa20(τ0, k, τ1, n, τ2, k, τ3)
+func expansion16(k [16]byte, n [16]byte) [64]byte {
+	var s [64]byte
+
+	copy(s[0:4], tau[0][:])
+	copy(s[4:20], k[:])
+	copy(s[20:24], tau[1][:])
+	copy(s[24:40], n[:])
+	copy(s[40:44], tau[2][:])
+	copy(s[44:60], k[:])
+	copy(s[60:64], tau[3][:])
+
+	return s
+}
+
+type KeySizeError int
+
+func (k KeySizeError) Error() string {
+	return "salsa20: invalid key size " + strconv.Itoa(int(k))
+}
+
+type Cipher struct {
+	k []byte
+	v [8]byte
+}
+
+func NewCipher(k []byte, v [8]byte) (*Cipher, error) {
+	switch len(k) {
+	case 16, 32:
+		return &Cipher{k: k, v: v}, nil
+
+	default:
+		return nil, KeySizeError(len(k))
+	}
+}
+
+func (c *Cipher) at(n uint64) [64]byte {
+	var nonce [16]byte
+
+	copy(nonce[0:8], c.v[:])
+
+	for i := uint(0); i < 8; i++ {
+		nonce[i+8] = byte(n >> (i * 8))
+	}
+
+	var exp [64]byte
+	switch len(c.k) {
+
+	case 16:
+		var k [16]byte
+		copy(k[:], c.k)
+		exp = expansion16(k, nonce)
+
+	case 32:
+		var k [32]byte
+		copy(k[:], c.k)
+		exp = expansion32(k, nonce)
+
+	default:
+		panic(len(c.k))
+	}
+
+	h := hash(exp)
+
+	return h
+}
+
+/*
+XORKeyStream(c Cipher, dst, src []byte) {
+	for i, s := range src {
+	s ^
+	}
+}
+*/
