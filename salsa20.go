@@ -191,7 +191,7 @@ func NewCipher(k []byte, v [8]byte) (*Cipher, error) {
 	}
 }
 
-func (c *Cipher) at(n uint64) [64]byte {
+func (c *Cipher) block(n uint64) [64]byte {
 	var nonce [16]byte
 
 	copy(nonce[0:8], c.v[:])
@@ -223,9 +223,30 @@ func (c *Cipher) at(n uint64) [64]byte {
 }
 
 /*
-XORKeyStream(c Cipher, dst, src []byte) {
-	for i, s := range src {
-	s ^
+func XORKeyStream(c Cipher, dst, src []byte) {
+
+	fullBlocks := len(src) / 64
+	for i := 0; i < fullBlocks; i++ {
+		s := i*64
+		
+		cipb := c.block(i)
+		srcb := src[s:s+64]
+		dstb := dst[s:s+64]
+		
+		for j := range srcb {
+			dstb[j] = srcb[j] ^ cipb[j]
+		}
+	}
+	
+	remBlockSize := len(src) % 64
+	if remBlockSize > 0 {
+		cipb := 
+	}
+	cipb := 
+	
+	sal := c.block(0)
+	for i := range src[0:64] {
+		dst[i] = src[i] ^ sal[i]
 	}
 }
-*/
+}*/
