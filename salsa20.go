@@ -1,7 +1,5 @@
 package salsa20
 
-import "strconv"
-
 type word uint32
 
 func lrot(u, c word) word {
@@ -169,84 +167,3 @@ func expansion16(k [16]byte, n [16]byte) [64]byte {
 
 	return s
 }
-
-type KeySizeError int
-
-func (k KeySizeError) Error() string {
-	return "salsa20: invalid key size " + strconv.Itoa(int(k))
-}
-
-type Cipher struct {
-	k []byte
-	v [8]byte
-}
-
-func NewCipher(k []byte, v [8]byte) (*Cipher, error) {
-	switch len(k) {
-	case 16, 32:
-		return &Cipher{k: k, v: v}, nil
-
-	default:
-		return nil, KeySizeError(len(k))
-	}
-}
-
-func (c *Cipher) block(n uint64) [64]byte {
-	var nonce [16]byte
-
-	copy(nonce[0:8], c.v[:])
-
-	for i := uint(0); i < 8; i++ {
-		nonce[i+8] = byte(n >> (i * 8))
-	}
-
-	var exp [64]byte
-	switch len(c.k) {
-
-	case 16:
-		var k [16]byte
-		copy(k[:], c.k)
-		exp = expansion16(k, nonce)
-
-	case 32:
-		var k [32]byte
-		copy(k[:], c.k)
-		exp = expansion32(k, nonce)
-
-	default:
-		panic(len(c.k))
-	}
-
-	h := hash(exp)
-
-	return h
-}
-
-/*
-func XORKeyStream(c Cipher, dst, src []byte) {
-
-	fullBlocks := len(src) / 64
-	for i := 0; i < fullBlocks; i++ {
-		s := i*64
-		
-		cipb := c.block(i)
-		srcb := src[s:s+64]
-		dstb := dst[s:s+64]
-		
-		for j := range srcb {
-			dstb[j] = srcb[j] ^ cipb[j]
-		}
-	}
-	
-	remBlockSize := len(src) % 64
-	if remBlockSize > 0 {
-		cipb := 
-	}
-	cipb := 
-	
-	sal := c.block(0)
-	for i := range src[0:64] {
-		dst[i] = src[i] ^ sal[i]
-	}
-}
-}*/
