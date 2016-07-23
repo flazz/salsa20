@@ -146,19 +146,21 @@ func TestReadEOF(t *testing.T) {
 	t.Skip("not implemented")
 }
 
-/*
-
-func BenchmarkSliceFun(fn sliceFun, b *testing.B) {
-	a := make([]byte, K)
-	if _, err := rand.Read(a); err != nil {
-		b.Error(err)
-	}
-	out := make([]byte, K)
-
-	b.ResetTimer()
+func BenchmarkBlock(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		fn(out, a, a)
+		cip16.Block(100)
 	}
 }
 
-*/
+func BenchmarkRead(b *testing.B) {
+	r := cip16.NewReader().(*reader)
+	p := make([]byte, blockSize)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := r.Read(p)
+		if err != nil {
+			b.Error(err)
+		}
+	}
+}
