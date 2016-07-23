@@ -36,9 +36,27 @@ func TestQuarterRound(t *testing.T) {
 	}
 
 	for _, row := range table {
-		qr := quarterRound(row.in)
+		qr := quarterRound3(row.in)
 		if row.out != qr {
 			t.Errorf("want: %x; got: %x", row.out, qr)
 		}
+	}
+}
+
+func BenchmarkQuarterRound(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		quarterRound([4]word{0xd3917c5b, 0x55f1c407, 0x52a58a7a, 0x8f887a3b})
+	}
+}
+
+func BenchmarkQuarterRound2(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		quarterRound2([4]word{0xd3917c5b, 0x55f1c407, 0x52a58a7a, 0x8f887a3b})
+	}
+}
+
+func BenchmarkQuarterRound3(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		quarterRound3([4]word{0xd3917c5b, 0x55f1c407, 0x52a58a7a, 0x8f887a3b})
 	}
 }

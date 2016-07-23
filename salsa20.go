@@ -24,6 +24,51 @@ func quarterRound(y [4]word) [4]word {
 	return z
 }
 
+func lrot2(u, c0, c1 word) word {
+	return (u << c0) | (u >> c1)
+}
+
+func quarterRound2(y [4]word) [4]word {
+	var z [4]word
+
+	// z1 = y1 ⊕ ((y0 + y3) <<< 7),
+	z[1] = y[1] ^ lrot2(y[0]+y[3], 7, 32-7)
+
+	// z2 = y2 ⊕ ((z1 + y0) <<< 9),
+	z[2] = y[2] ^ lrot2(z[1]+y[0], 9, 32-9)
+
+	// z3 = y3 ⊕ ((z2 + z1) <<< 13),
+	z[3] = y[3] ^ lrot2(z[2]+z[1], 13, 32-13)
+
+	// z0 = y0 ⊕ ((z3 + z2) <<< 18).
+	z[0] = y[0] ^ lrot2(z[3]+z[2], 18, 32-18)
+
+	return z
+}
+
+func quarterRound3(y [4]word) [4]word {
+	var z [4]word
+	var u word
+
+	// z1 = y1 ⊕ ((y0 + y3) <<< 7),
+	u = y[0] + y[3]
+	z[1] = y[1] ^ (u<<7 | u>>(32-7))
+
+	// z2 = y2 ⊕ ((z1 + y0) <<< 9),
+	u = z[1] + y[0]
+	z[2] = y[2] ^ (u<<9 | u>>(32-9))
+
+	// z3 = y3 ⊕ ((z2 + z1) <<< 13),
+	u = z[2] + z[1]
+	z[3] = y[3] ^ (u<<13 | u>>(32-13))
+
+	// z0 = y0 ⊕ ((z3 + z2) <<< 18).
+	u = z[3] + z[2]
+	z[0] = y[0] ^ (u<<18 | u>>(32-18))
+
+	return z
+}
+
 func rowRound(y [16]word) [16]word {
 	var z [16]word
 	var q [4]word
